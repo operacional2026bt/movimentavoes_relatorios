@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Movimentação de Vans - Bel-tour</title>
+    <script src="motoristas.js"></script>
+    <style>
+        /* DESIGN PATTERN BEL-TOUR DARK (O ARQUITETO) */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background-color: #121212; 
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; 
+            padding: 15px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 500px; 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        h2 { 
+            color: #FFD700; 
+            text-align: center; 
+            margin-bottom: 20px; 
+            text-transform: uppercase; 
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .form-group { 
+            display: flex; 
+            flex-direction: column; 
+            width: 100%; 
+        }
+
+        label { 
+            font-size: 13px; 
+            margin-bottom: 5px; 
+            color: #FFD700; 
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .time-row { display: flex; gap: 10px; }
+
+        /* CAMPOS COM BORDA AMARELA BEL-TOUR */
+        select, input {
+            background-color: #1e1e1e; 
+            border: none;
+            border-left: 5px solid #FFD700; 
+            color: white;
+            padding: 15px; 
+            border-radius: 4px; 
+            font-size: 16px; 
+            outline: none; 
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .nome-display {
+            font-size: 16px; 
+            font-weight: bold; 
+            color: #00e676;
+            padding: 15px; 
+            background: #1e1e1e;
+            border-radius: 4px;
+            display: block;
+            text-align: center;
+            border-bottom: 2px solid #333;
+        }
+
+        .check-group {
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            background: #1e1e1e; 
+            padding: 15px; 
+            border-radius: 4px;
+            border-left: 5px solid #FFD700;
+            margin-bottom: 8px; 
+            cursor: pointer;
+            min-height: 60px;
+        }
+
+        .check-group input { width: 22px; height: 22px; accent-color: #FFD700; }
+
+        #preview-container { display: none; margin-top: 15px; }
+        .preview-box {
+            background-color: #000; 
+            border: 1px solid #333;
+            padding: 15px; 
+            border-radius: 4px; 
+            font-size: 14px; 
+            white-space: pre-wrap; 
+            color: #FFD700; 
+            margin-bottom: 10px;
+        }
+
+        .btn-copy {
+            background-color: #FFD700; 
+            color: #000; 
+            border: none; 
+            padding: 18px;
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            width: 100%; 
+            cursor: pointer;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        .btn-short {
+            background-color: #1e1e1e; 
+            color: #FFD700; 
+            border: 1px solid #FFD700; 
+            padding: 15px;
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 14px; 
+            width: 100%; 
+            margin-top: 10px; 
+            cursor: pointer;
+        }
+
+        .btn-clear { 
+            background-color: transparent; 
+            color: #ff5252; 
+            border: 1px solid #ff5252; 
+            padding: 10px; 
+            border-radius: 8px; 
+            width: 100%; 
+            margin-top: 20px; 
+            cursor: pointer;
+        }
+
+        .status-msg { text-align: center; font-size: 14px; margin-top: 10px; color: #00e676; font-weight: bold; visibility: hidden; }
+        
+        .footer-sig { 
+            margin-top: 30px; 
+            padding: 20px;
+            font-size: 11px; 
+            color: #666; 
+            text-align: center; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>MOVIMENTAÇÃO DE VANS</h2>
+
+    <div class="form-group">
+        <label>Atividade</label>
+        <select id="embarque" onchange="verificarTipo()">
+            <option value="EMBARQUE CENTRAL">EMBARQUE CENTRAL</option>
+            <option value="EMBARQUE LGO DO MACHADO">EMBARQUE LGO DO MACHADO</option>
+            <option value="EMBARQUE LGO DO MACHADO (MOTORISTAS DE PASSE)">EMBARQUE LGO DO MACHADO (MOTORISTAS DE PASSE)</option>
+            <option value="PAINEIRAS">PAINEIRAS</option>
+            <option value="ABASTECIMENTO">ABASTECIMENTO</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Horário</label>
+        <div class="time-row">
+            <select id="hora" onchange="validarVisibilidade()"></select>
+            <select id="minuto" onchange="validarVisibilidade()"></select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label id="label-quantidade">Qtd. Integrantes</label>
+        <input type="number" id="quantidade" placeholder="Ex: 13" oninput="validarVisibilidade()">
+    </div>
+
+    <div class="form-group">
+        <label>Número da Van</label>
+        <input type="text" id="van" placeholder="Ex: 130" oninput="validarVisibilidade()">
+    </div>
+
+    <label>Opções Adicionais</label>
+    <div class="check-group" onclick="toggleCheck('icmbio')">
+        <input type="checkbox" id="icmbio" onchange="validarVisibilidade()">
+        <span>ICMbio</span>
+    </div>
+    <div class="check-group" onclick="toggleCheck('incHorario')">
+        <input type="checkbox" id="incHorario" onchange="validarVisibilidade()">
+        <span>Incluir Horário no Resumo</span>
+    </div>
+    <div class="check-group" onclick="toggleCheck('bateVolta')">
+        <input type="checkbox" id="bateVolta" onchange="validarVisibilidade()">
+        <span>Bate e Volta</span>
+    </div>
+    <div class="check-group" onclick="toggleCheck('segundoHorario')">
+        <input type="checkbox" id="segundoHorario" onchange="validarVisibilidade()">
+        <span>Segundo Horário</span>
+    </div>
+    <div class="check-group" onclick="toggleCheck('extraAbastecimento')">
+        <input type="checkbox" id="extraAbastecimento" onchange="validarVisibilidade()">
+        <span>+ Abastecimento</span>
+    </div>
+
+    <div class="form-group">
+        <label id="label-matricula">Matrícula</label>
+        <input type="number" id="matricula" placeholder="Digite a matrícula" oninput="buscarMotorista()">
+    </div>
+
+    <span id="nome-exibicao" class="nome-display">Aguardando matrícula...</span>
+
+    <div id="preview-container">
+        <label>Relatório Gerado:</label>
+        <div id="preview" class="preview-box"></div>
+    </div>
+
+    <button class="btn-copy" id="btnCopiar" onclick="copiarRelatorio('completo')">COPIAR RELATÓRIO</button>
+    <button class="btn-short" id="btnCopiarCurto" onclick="copiarRelatorio('curto')">COPIAR CURTO (WHATSAPP)</button>
+    
+    <button class="btn-clear" onclick="limparCampos()">LIMPAR FORMULÁRIO</button>
+
+    <p id="status" class="status-msg">Copiado com sucesso! ✅</p>
+
+    <div class="footer-sig">
+        by Tiago C Araujo – Araújo II – mat 3240 – Bel-tour 🚌🗽🚠😎👨‍✈️
+    </div>
+</div>
+
+<script>
+    const sH = document.getElementById('hora');
+    const sM = document.getElementById('minuto');
+    
+    for(let i=0; i<24; i++) { let h = i<10?'0'+i:i; sH.options[sH.options.length] = new Option(h, h); }
+    for(let i=0; i<60; i++) { let m = i<10?'0'+i:i; sM.options[sM.options.length] = new Option(m, m); }
+
+    const agora = new Date();
+    sH.value = agora.getHours() < 10 ? '0' + agora.getHours() : agora.getHours();
+    sM.value = agora.getMinutes() < 10 ? '0' + agora.getMinutes() : agora.getMinutes();
+
+    function toggleCheck(id) {
+        const el = document.getElementById(id);
+        el.checked = !el.checked;
+        validarVisibilidade();
+    }
+
+    function obterSaudacao() {
+        const h = parseInt(sH.value);
+        if (h >= 5 && h < 12) return "Bom dia!";
+        if (h >= 12 && h < 18) return "Boa tarde!";
+        return "Boa noite!";
+    }
+
+    function buscarMotorista() {
+        const mat = document.getElementById('matricula').value;
+        const display = document.getElementById('nome-exibicao');
+        // Verifica se a variável 'bancoMotoristas' foi carregada pelo motoristas.js
+        if (typeof bancoMotoristas !== 'undefined' && bancoMotoristas[mat]) {
+            display.innerText = bancoMotoristas[mat];
+            display.style.color = "#FFD700";
+        } else {
+            display.innerText = mat ? "MOTORISTA NÃO LOCALIZADO" : "Aguardando matrícula...";
+            display.style.color = mat ? "#ff5252" : "#666";
+        }
+        validarVisibilidade();
+    }
+
+    function verificarTipo() {
+        const emb = document.getElementById('embarque').value;
+        document.getElementById('label-quantidade').innerText = (emb === "ABASTECIMENTO") ? "KM" : "Qtd. Integrantes";
+        validarVisibilidade();
+    }
+
+    function validarVisibilidade() {
+        const q = document.getElementById('quantidade').value;
+        const v = document.getElementById('van').value;
+        const m = document.getElementById('matricula').value;
+        const show = (q || v || m);
+        document.getElementById('preview-container').style.display = show ? 'block' : 'none';
+        if(show) document.getElementById('preview').innerText = gerarTexto('completo');
+    }
+
+    function gerarTexto(tipo) {
+        const emb = document.getElementById('embarque').value;
+        const h = sH.value;
+        const mi = sM.value;
+        const q = document.getElementById('quantidade').value || "0";
+        const vRaw = document.getElementById('van').value || ""; 
+        const m = document.getElementById('matricula').value;
+        const n = document.getElementById('nome-exibicao').innerText;
+        
+        const bv = document.getElementById('bateVolta').checked;
+        const sh = document.getElementById('segundoHorario').checked;
+        const abast = document.getElementById('extraAbastecimento').checked;
+        const icm = document.getElementById('icmbio').checked;
+        const incH = document.getElementById('incHorario').checked;
+        
+        const saudacao = obterSaudacao();
+        const vFormatada = (vRaw && vRaw !== "") ? ((!vRaw.toUpperCase().startsWith("VTR")) ? "VTR " + vRaw : vRaw) : "";
+
+        if (tipo === 'curto') {
+            let resumo = `${saudacao}\n`;
+            if (incH) resumo += `${h}:${mi}\n`;
+            resumo += `\n${vFormatada}\n${emb}\n`;
+            if (icm) resumo += `(ICMbio)\n`;
+            resumo += `${q} ${(emb === "ABASTECIMENTO") ? 'KM' : 'Integrantes'}`;
+            if (sh) resumo += `\n⏳ Segundo Horário`;
+            let extras = [];
+            if (bv) extras.push("Bate e Volta");
+            if (abast) extras.push("+ Abastecimento");
+            if (extras.length > 0) resumo += ` (${extras.join(" / ")})`;
+            return resumo;
+        } else {
+            let texto = `${saudacao}\n\n*RELATÓRIO DE VANS*\n`;
+            texto += `📍 *Local:* ${emb}${icm ? " (ICMbio)" : ""}\n`;
+            texto += `⏰ *Horário:* ${h}:${mi}\n`;
+            texto += (emb === "ABASTECIMENTO") ? `🛣️ *KM:* ${q}\n` : `👥 *Integrantes:* ${q}\n`;
+            if (vRaw) texto += `🚐 *Van:* ${vRaw}\n`;
+            if (sh) texto += `\n⏳ *Segundo Horário*`;
+            let extras = [];
+            if (bv) extras.push("Bate e Volta");
+            if (abast) extras.push("+ Abastecimento");
+            if (extras.length > 0) texto += `\n📝 *Obs:* ${extras.join(" / ")}`;
+            if (m) texto += `\n\n👤 *Motorista:* ${n}\n🆔 *Matrícula:* ${m}`;
+            return texto;
+        }
+    }
+
+    function copiarRelatorio(tipo) {
+        const texto = gerarTexto(tipo);
+        navigator.clipboard.writeText(texto).then(() => {
+            const status = document.getElementById('status');
+            status.style.visibility = 'visible';
+            setTimeout(() => { status.style.visibility = 'hidden'; }, 2000);
+        });
+    }
+
+    function limparCampos() {
+        document.getElementById('quantidade').value = "";
+        document.getElementById('van').value = "";
+        document.getElementById('matricula').value = "";
+        document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+        document.getElementById('nome-exibicao').innerText = "Aguardando matrícula...";
+        validarVisibilidade();
+    }
+</script>
+</body>
+</html>
