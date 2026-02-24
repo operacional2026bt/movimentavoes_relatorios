@@ -26,12 +26,25 @@
             font-size: 18px; font-weight: bold; color: #00e676;
             padding: 10px 5px; min-height: 40px; display: block;
         }
+        
         .check-group {
             display: flex; align-items: center; gap: 10px;
             background: #1e1e1e; padding: 12px; border-radius: 8px;
             border: 1px solid #333; margin-bottom: 10px; cursor: pointer;
+            user-select: none; transition: opacity 0.3s;
         }
-        .check-group input { width: 20px; height: 20px; accent-color: #00e676; }
+        /* Estilo para Adicionais desabilitados no Abastecimento */
+        .check-group.disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+        .check-group input { 
+            width: 22px; height: 22px; accent-color: #00e676; 
+            cursor: pointer;
+        }
+        .check-group span { flex: 1; cursor: pointer; }
 
         #preview-container { display: none; margin-top: 10px; margin-bottom: 20px; }
         .preview-box {
@@ -90,24 +103,24 @@
 
     <div class="form-group">
         <label>Adicionais</label>
-        <div class="check-group" onclick="toggleCheck('icmbio')">
-            <input type="checkbox" id="icmbio" onchange="validarVisibilidade()">
+        <div class="check-group lock-on-abast" onclick="toggleCheck('icmbio', event)">
+            <input type="checkbox" id="icmbio" onchange="validarVisibilidade()" onclick="event.stopPropagation()">
             <span>ICMbio</span>
         </div>
-        <div class="check-group" onclick="toggleCheck('incHorario')">
-            <input type="checkbox" id="incHorario" onchange="validarVisibilidade()">
+        <div class="check-group" onclick="toggleCheck('incHorario', event)">
+            <input type="checkbox" id="incHorario" onchange="validarVisibilidade()" onclick="event.stopPropagation()">
             <span>Incluir Horário no Resumo</span>
         </div>
-        <div class="check-group" onclick="toggleCheck('bateVolta')">
-            <input type="checkbox" id="bateVolta" onchange="validarVisibilidade()">
+        <div class="check-group lock-on-abast" onclick="toggleCheck('bateVolta', event)">
+            <input type="checkbox" id="bateVolta" onchange="validarVisibilidade()" onclick="event.stopPropagation()">
             <span>Bate e Volta</span>
         </div>
-        <div class="check-group" onclick="toggleCheck('segundoHorario')">
-            <input type="checkbox" id="segundoHorario" onchange="validarVisibilidade()">
+        <div class="check-group lock-on-abast" onclick="toggleCheck('segundoHorario', event)">
+            <input type="checkbox" id="segundoHorario" onchange="validarVisibilidade()" onclick="event.stopPropagation()">
             <span>Segundo Horário</span>
         </div>
-        <div class="check-group" onclick="toggleCheck('extraAbastecimento')">
-            <input type="checkbox" id="extraAbastecimento" onchange="validarVisibilidade()">
+        <div class="check-group lock-on-abast" onclick="toggleCheck('extraAbastecimento', event)">
+            <input type="checkbox" id="extraAbastecimento" onchange="validarVisibilidade()" onclick="event.stopPropagation()">
             <span>+ Abastecimento</span>
         </div>
     </div>
@@ -151,9 +164,14 @@
     sH.value = agora.getHours() < 10 ? '0' + agora.getHours() : agora.getHours();
     sM.value = agora.getMinutes() < 10 ? '0' + agora.getMinutes() : agora.getMinutes();
 
-    function toggleCheck(id) {
+    function toggleCheck(id, event) {
         const el = document.getElementById(id);
-        el.checked = !el.checked;
+        const parent = el.closest('.check-group');
+        if (parent.classList.contains('disabled')) return;
+
+        if (event.target !== el) {
+            el.checked = !el.checked;
+        }
         validarVisibilidade();
     }
 
@@ -179,8 +197,21 @@
 
     function verificarTipo() {
         const emb = document.getElementById('embarque').value;
+        const locks = document.querySelectorAll('.lock-on-abast');
+        
         document.getElementById('label-quantidade').innerText = (emb === "ABASTECIMENTO") ? "KM" : "Qtd. Integrantes";
         document.getElementById('label-matricula').innerText = (emb === "ABASTECIMENTO") ? "Matrícula (OBRIGATÓRIO)" : "Matrícula";
+
+        locks.forEach(div => {
+            const input = div.querySelector('input');
+            if (emb === "ABASTECIMENTO") {
+                div.classList.add('disabled');
+                input.checked = false;
+            } else {
+                div.classList.remove('disabled');
+            }
+        });
+
         validarVisibilidade();
     }
 
@@ -241,6 +272,7 @@
             if (bv) extras.push("Bate e Volta");
             if (abast) extras.push("+ Abastecimento");
             if (extras.length > 0) resumo += ` (${extras.join(" / ")})`;
+            if (m) { resumo += `\n\n👤 ${n}\n🆔 ${m}`; }
             return resumo;
         } else {
             let texto = `${saudacao}\n\n*RELATÓRIO DE VANS*\n`;
@@ -248,7 +280,7 @@
             texto += `⏰ *Horário:* ${h}:${mi}\n`;
             texto += (emb === "ABASTECIMENTO") ? `🛣️ *KM:* ${q}\n` : `👥 *Integrantes:* ${q}\n`;
             if (vRaw) { texto += `🚐 *Van:* ${vRaw}\n`; }
-            if (sh) texto += `\n⏳ *Segundo Horário*`;
+            if (sh) texto += `\n Segundo Horário`;
             let extras = [];
             if (bv) extras.push("Bate e Volta");
             if (abast) extras.push("+ Abastecimento");
@@ -260,15 +292,11 @@
 
     function copiarRelatorio(tipo) {
         const texto = gerarTexto(tipo);
-        const dummy = document.createElement("textarea");
-        document.body.appendChild(dummy);
-        dummy.value = texto;
-        dummy.select();
-        document.execCommand("copy");
-        document.body.removeChild(dummy);
-        const status = document.getElementById('status');
-        status.style.visibility = 'visible';
-        setTimeout(() => { status.style.visibility = 'hidden'; }, 2000);
+        navigator.clipboard.writeText(texto).then(() => {
+            const status = document.getElementById('status');
+            status.style.visibility = 'visible';
+            setTimeout(() => { status.style.visibility = 'hidden'; }, 2000);
+        });
     }
 
     function limparCampos() {
